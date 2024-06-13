@@ -1,0 +1,9 @@
+.button {
+
+    &:active {
+        background-color: color-mix(in srgb, currentColor 10%, transparent);
+        background-size: 100%;
+        transition: background 0s;
+    }
+
+}

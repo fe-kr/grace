@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Grace",
+  "version": "1.0.0",
+  "description": "Extension for saving timestamps in YT videos",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "assets/background.js"
+  }
+}
