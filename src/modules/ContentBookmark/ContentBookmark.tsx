@@ -27,7 +27,7 @@ const ContentBookmark = () => {
       },
       meta: { videoId },
     });
-  }, 1000);
+  }, 500);
 
   useEffect(() => {
     chrome.runtime.onMessage.addListener(({ type, payload }) => {

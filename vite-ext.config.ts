@@ -12,7 +12,6 @@ export default defineConfig({
   },
   build: {
     emptyOutDir: false,
-    target: "node16",
     rollupOptions: {
       input: {
         content: "src/scripts/content/index.tsx",

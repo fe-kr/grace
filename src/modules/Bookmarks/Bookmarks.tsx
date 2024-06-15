@@ -1,4 +1,4 @@
-import { MouseEvent, useCallback, useEffect, useState } from "react";
+import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { Bookmark } from "@/components";
 import { BookmarkEventType } from "@/constants/enums";
@@ -6,6 +6,7 @@ import { BookmarkEventType } from "@/constants/enums";
 const Bookmarks = () => {
   const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
   const [data, setData] = useState<Bookmark[] | null>(null);
+  const videoIdRef = useRef<string>("");
 
   const onPlayBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
     const { id } = e.currentTarget.dataset;
@@ -29,7 +30,7 @@ const Bookmarks = () => {
     chrome.runtime.sendMessage({
       type: BookmarkEventType.DELETE,
       payload: { id },
-      meta: { videoId: new URL(activeTab.url!).searchParams.get("v") },
+      meta: { videoId: videoIdRef.current, tabId: activeTab.id },
     });
   };
 
@@ -42,10 +43,10 @@ const Bookmarks = () => {
 
     setActiveTab(activeTab);
 
-    const videoId = new URL(activeTab.url).searchParams.get("v") as string;
+    videoIdRef.current = new URL(activeTab.url).searchParams.get("v")!;
 
-    chrome.storage.sync.get(videoId, data => {
-      const parsedData = data[videoId] ? JSON.parse(data[videoId]) : null;
+    chrome.storage.sync.get(videoIdRef.current, data => {
+      const parsedData = data[videoIdRef.current] ? JSON.parse(data[videoIdRef.current]) : null;
 
       setData(parsedData);
     });
@@ -55,8 +56,18 @@ const Bookmarks = () => {
     onInitBookmarks();
   }, [onInitBookmarks]);
 
-  if (!data) {
-    return "No Bookmarks";
+  useEffect(() => {
+    chrome.storage.onChanged.addListener(changes => {
+      const parsedData = changes[videoIdRef.current]?.newValue
+        ? JSON.parse(changes[videoIdRef.current].newValue)
+        : null;
+
+      setData(parsedData);
+    });
+  }, []);
+
+  if (!data?.length) {
+    return <div className="p-2 text-nowrap">No Bookmarks</div>;
   }
 
   return (
