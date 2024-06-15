@@ -1,29 +1,63 @@
-import { MouseEvent } from "react";
+import { MouseEvent, useCallback, useEffect, useState } from "react";
 
 import { Bookmark } from "@/components";
-import { getActiveTab } from "@/utils/browser";
-import { checkIsNil } from "@/utils/common";
+import { BookmarkEventType } from "@/constants/enums";
 
-interface BookmarksProps {
-  data: Array<Bookmark>;
-}
+const Bookmarks = () => {
+  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
+  const [data, setData] = useState<Bookmark[] | null>(null);
 
-const Bookmarks = ({ data }: BookmarksProps) => {
-  const onBookmarkIconClick = async (e: MouseEvent<HTMLButtonElement>) => {
-    const { timestamp, type, id } = e.currentTarget.dataset;
+  const onPlayBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
+    const { id } = e.currentTarget.dataset;
+    const payload = data?.find(bookmark => bookmark.id === id);
 
-    const activeTab = await getActiveTab();
-
-    if (checkIsNil(activeTab.id)) {
+    if (!activeTab?.id) {
       return;
     }
 
     chrome.tabs.sendMessage(activeTab.id, {
-      id,
-      type,
-      value: timestamp,
+      type: BookmarkEventType.PLAY,
+      payload,
     });
   };
+
+  const onDeleteBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
+    if (!activeTab?.id) return;
+
+    const { id } = e.currentTarget.dataset;
+
+    chrome.runtime.sendMessage({
+      type: BookmarkEventType.DELETE,
+      payload: { id },
+      meta: { videoId: new URL(activeTab.url!).searchParams.get("v") },
+    });
+  };
+
+  const onInitBookmarks = useCallback(async () => {
+    const [activeTab] = await chrome.tabs.query({ currentWindow: true, active: true });
+
+    if (!activeTab?.url) {
+      return;
+    }
+
+    setActiveTab(activeTab);
+
+    const videoId = new URL(activeTab.url).searchParams.get("v") as string;
+
+    chrome.storage.sync.get(videoId, data => {
+      const parsedData = data[videoId] ? JSON.parse(data[videoId]) : null;
+
+      setData(parsedData);
+    });
+  }, []);
+
+  useEffect(() => {
+    onInitBookmarks();
+  }, [onInitBookmarks]);
+
+  if (!data) {
+    return "No Bookmarks";
+  }
 
   return (
     <div className="p-2">
@@ -32,12 +66,7 @@ const Bookmarks = ({ data }: BookmarksProps) => {
       </h3>
       <ul className="m-0">
         {data.map(item => (
-          <Bookmark
-            {...item}
-            key={item.id}
-            onPlay={onBookmarkIconClick}
-            onDelete={onBookmarkIconClick}
-          />
+          <Bookmark {...item} key={item.id} onPlay={onPlayBookmark} onDelete={onDeleteBookmark} />
         ))}
       </ul>
     </div>

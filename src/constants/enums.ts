@@ -1,5 +1,6 @@
 export const BookmarkEventType = {
-  NEW: "NEW",
+  INIT_VIDEO: "INIT_VIDEO",
+  CREATE: "CREATE",
   PLAY: "PLAY",
   DELETE: "DELETE",
 };

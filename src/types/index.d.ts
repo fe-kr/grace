@@ -1,7 +1,6 @@
 declare interface Bookmark {
   id: string;
   timestamp: number;
-  name: string;
 }
 
 declare module "*.svg?react" {

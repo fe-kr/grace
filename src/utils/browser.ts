@@ -4,5 +4,10 @@ export const getActiveTab = async () => {
     active: true,
   });
 
+  if (!activeTab) {
+    return Promise.reject();
+  }
+
   return activeTab;
 };
+

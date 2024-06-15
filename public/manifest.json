@@ -9,6 +9,15 @@
   "permissions": ["storage", "tabs"],
   "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "assets/background.js"
-  }
+    "service_worker": "assets/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "type": "module",
+      "matches": ["<all_urls>"],
+      "js": ["assets/content.js"],
+      "css": ["assets/content_styles.css"]
+    }
+  ]
 }
