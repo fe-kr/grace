@@ -14,7 +14,7 @@ interface BookmarkProps extends Bookmark {
 const Bookmark = ({ id, timestamp, onDelete, onPlay }: BookmarkProps) => {
   return (
     <li className="flex items-center p-2 gap-2 border-b border-gray-200">
-      <span>{`Bookmark at ${formatTimestamp(timestamp)}`}</span>
+      <span className="text-nowrap">{`Bookmark at ${formatTimestamp(timestamp)}`}</span>
 
       <IconButton icon={PlayIcon} label="Play" data-id={id} onClick={onPlay} />
 

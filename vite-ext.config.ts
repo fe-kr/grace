@@ -14,13 +14,11 @@ export default defineConfig({
     emptyOutDir: false,
     rollupOptions: {
       input: {
-        content: "src/scripts/content/index.tsx",
-        content_styles: "src/scripts/content/index.css",
+        content: "src/scripts/content.tsx",
         background: "src/scripts/background.ts",
       },
       output: {
         entryFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
       },
     },
   },

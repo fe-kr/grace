@@ -1,19 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import BookmarkIcon from "@/assets/bookmark.svg?react";
 import { BookmarkEventType } from "@/constants/enums";
 import useDebounce from "@/hooks/useDebounce";
-import { checkIsNil } from "@/utils/common";
+import { checkIsNil, parseVideoIdFromUrl } from "@/utils/common";
 
 const ContentBookmark = () => {
   const youtubePlayerRef = useRef<HTMLVideoElement | null>(null);
   const [bookmarkTarget, setBookmarkTarget] = useState<Element | null>(null);
 
   const onAddBookmark = useDebounce(async () => {
-    const videoId = new URLSearchParams(window.location.search).get("v");
-
-    const { currentTime } = youtubePlayerRef.current || {};
+    const videoId = parseVideoIdFromUrl(window.location.href);
+    const currentTime = youtubePlayerRef.current?.currentTime;
 
     if (!videoId || checkIsNil(currentTime)) {
       return;
@@ -29,26 +28,48 @@ const ContentBookmark = () => {
     });
   }, 500);
 
-  useEffect(() => {
-    chrome.runtime.onMessage.addListener(({ type, payload }) => {
+  const onPlayVideo = useCallback((timestamp: number) => {
+    if (!youtubePlayerRef.current) {
+      return;
+    }
+
+    youtubePlayerRef.current.currentTime = timestamp;
+  }, []);
+
+  const onInitVideo = useCallback(() => {
+    const bookmarkTarget = document.querySelector("ytd-player div.ytp-right-controls");
+    youtubePlayerRef.current = document.querySelector("ytd-player video.video-stream");
+
+    setBookmarkTarget(bookmarkTarget);
+  }, []);
+
+  const onContentUpdate = useCallback(
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    ({ type, payload }: any) => {
       switch (type) {
         case BookmarkEventType.INIT_VIDEO: {
-          youtubePlayerRef.current = document.querySelector("ytd-player video.video-stream");
-          setBookmarkTarget(document.querySelector("ytd-player div.ytp-right-controls"));
+          onInitVideo();
           break;
         }
 
-        case BookmarkEventType.PLAY: {
-          if (!youtubePlayerRef.current) return;
-          youtubePlayerRef.current.currentTime = payload.timestamp;
+        case BookmarkEventType.PLAY:
+          onPlayVideo(payload.timestamp);
           break;
-        }
 
         default:
-          return null;
+          break;
       }
-    });
-  }, []);
+    },
+    [onInitVideo, onPlayVideo],
+  );
+
+  useEffect(() => {
+    chrome.runtime.onMessage.addListener(onContentUpdate);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(onContentUpdate);
+    };
+  }, [onContentUpdate]);
 
   if (!bookmarkTarget) {
     return null;
@@ -56,7 +77,8 @@ const ContentBookmark = () => {
 
   return createPortal(
     <button
-      className="ytp-button ytp-button-grace-ext-bookmark"
+      style={{ float: "left" }}
+      className="ytp-button"
       title="Add Bookmark"
       onClick={onAddBookmark}
     >

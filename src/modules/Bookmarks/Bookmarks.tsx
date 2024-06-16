@@ -2,69 +2,62 @@ import { MouseEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { Bookmark } from "@/components";
 import { BookmarkEventType } from "@/constants/enums";
+import storage from "@/services/storage";
+import { parseVideoIdFromUrl } from "@/utils/common";
 
 const Bookmarks = () => {
-  const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
   const [data, setData] = useState<Bookmark[] | null>(null);
-  const videoIdRef = useRef<string>("");
+  const idsRef = useRef<{ tabId?: number; videoId?: string }>({});
 
-  const onPlayBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
-    const { id } = e.currentTarget.dataset;
-    const payload = data?.find(bookmark => bookmark.id === id);
-
-    if (!activeTab?.id) {
-      return;
-    }
-
-    chrome.tabs.sendMessage(activeTab.id, {
+  const onPlayVideo = (e: MouseEvent<HTMLButtonElement>) => {
+    console.log(BookmarkEventType.PLAY, idsRef, data);
+    chrome.tabs.sendMessage(idsRef.current.tabId!, {
       type: BookmarkEventType.PLAY,
-      payload,
+      payload: data?.find(({ id }) => id === e.currentTarget.dataset.id),
     });
   };
 
-  const onDeleteBookmark = async (e: MouseEvent<HTMLButtonElement>) => {
-    if (!activeTab?.id) return;
+  const onUpdateBookmarks = useCallback((changes: Record<string, chrome.storage.StorageChange>) => {
+    const videoId = idsRef.current?.videoId;
 
-    const { id } = e.currentTarget.dataset;
+    if (!videoId || !changes[videoId]) return;
 
+    const parsedData = JSON.parse(changes[videoId].newValue || null);
+
+    setData(parsedData);
+  }, []);
+
+  const onDeleteBookmark = useCallback((e: MouseEvent<HTMLButtonElement>) => {
     chrome.runtime.sendMessage({
       type: BookmarkEventType.DELETE,
-      payload: { id },
-      meta: { videoId: videoIdRef.current, tabId: activeTab.id },
+      payload: e.currentTarget.dataset,
+      meta: idsRef.current,
     });
-  };
+  }, []);
 
   const onInitBookmarks = useCallback(async () => {
     const [activeTab] = await chrome.tabs.query({ currentWindow: true, active: true });
+    const videoId = parseVideoIdFromUrl(activeTab.url)!;
 
-    if (!activeTab?.url) {
-      return;
-    }
+    if (!videoId) return;
 
-    setActiveTab(activeTab);
+    const data = await storage.getParsedItem(videoId);
+    idsRef.current = { videoId, tabId: activeTab.id };
 
-    videoIdRef.current = new URL(activeTab.url).searchParams.get("v")!;
-
-    chrome.storage.sync.get(videoIdRef.current, data => {
-      const parsedData = data[videoIdRef.current] ? JSON.parse(data[videoIdRef.current]) : null;
-
-      setData(parsedData);
-    });
+    setData(data);
   }, []);
 
   useEffect(() => {
-    onInitBookmarks();
+    onInitBookmarks().catch(Error);
   }, [onInitBookmarks]);
 
   useEffect(() => {
-    chrome.storage.onChanged.addListener(changes => {
-      const parsedData = changes[videoIdRef.current]?.newValue
-        ? JSON.parse(changes[videoIdRef.current].newValue)
-        : null;
+    storage.addListener(onUpdateBookmarks);
 
-      setData(parsedData);
-    });
-  }, []);
+    return () => {
+      storage.removeListener(onUpdateBookmarks);
+    };
+  }, [onUpdateBookmarks]);
 
   if (!data?.length) {
     return <div className="p-2 text-nowrap">No Bookmarks</div>;
@@ -76,9 +69,11 @@ const Bookmarks = () => {
         YouTube Bookmarks
       </h3>
       <ul className="m-0">
-        {data.map(item => (
-          <Bookmark {...item} key={item.id} onPlay={onPlayBookmark} onDelete={onDeleteBookmark} />
-        ))}
+        {data
+          .toSorted((a, b) => a.timestamp - b.timestamp)
+          .map(item => (
+            <Bookmark {...item} key={item.id} onPlay={onPlayVideo} onDelete={onDeleteBookmark} />
+          ))}
       </ul>
     </div>
   );

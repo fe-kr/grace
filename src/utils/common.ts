@@ -6,5 +6,13 @@ export const formatTimestamp = (timestamp: number) => {
   const minutes = Math.floor((timestamp % 3600) / 60);
   const seconds = Math.floor((timestamp % 3600) % 60);
 
-  return [hours, minutes, seconds].join(":");
+  return [hours, minutes, seconds].map(item => item.toString().padStart(2, "0")).join(":");
+};
+
+export const parseVideoIdFromUrl = (url?: string) => {
+  try {
+    return new URL(url || "").searchParams.get("v");
+  } catch {
+    return null;
+  }
 };

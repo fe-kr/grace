@@ -10,6 +10,7 @@ export const BookmarkEventType = {
 const sendInitVideoMessage = (tab: chrome.tabs.Tab) => {
   if (!youtubeVideoRegExp.test(tab.url ?? "")) {
     chrome.action.disable(tab.id);
+    chrome.action.setBadgeText({ text: "", tabId: tab.id });
     return;
   }
 

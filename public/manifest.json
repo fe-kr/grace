@@ -16,8 +16,7 @@
     {
       "type": "module",
       "matches": ["https://*.youtube.com/*"],
-      "js": ["assets/content.js"],
-      "css": ["assets/content_styles.css"]
+      "js": ["assets/content.js"]
     }
   ]
 }
