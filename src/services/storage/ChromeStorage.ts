@@ -20,7 +20,9 @@ export class ChromeStorage {
   }
 
   async setItem(key: string, value: unknown) {
-    return this.storage.set({ [key]: JSON.stringify(value) });
+    const formattedValue = typeof value === "object" ? JSON.stringify(value) : value;
+
+    return this.storage.set({ [key]: formattedValue });
   }
 
   async removeItem(key: string) {

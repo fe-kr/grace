@@ -1,4 +1,5 @@
-import { MouseEvent, FC, SVGProps } from "react";
+import { MouseEvent, FC, SVGProps, useId } from "react";
+import { Tooltip } from "react-tooltip";
 
 interface IconButtonProps {
   icon: FC<SVGProps<SVGSVGElement>>;
@@ -7,6 +8,11 @@ interface IconButtonProps {
   onClick: (e: MouseEvent<HTMLButtonElement>) => void;
 }
 
+const tooltipStyles = {
+  padding: "2px 8px",
+  fontSize: "12px",
+};
+
 const IconButton = ({
   icon: Icon,
   onClick,
@@ -14,15 +20,22 @@ const IconButton = ({
   label,
   ...restProps
 }: IconButtonProps) => {
+  const tooltipId = useId();
+
   return (
-    <button
-      {...restProps}
-      title={label}
-      className="flex justify-center items-center m-0 p-1 rounded-full shadow focus:outline-gray-200 hover:bg-gray-200 active:bg-gray-300"
-      onClick={onClick}
-    >
-      <Icon className={iconClassName} />
-    </button>
+    <>
+      <button
+        {...restProps}
+        data-tooltip-id={tooltipId}
+        data-tooltip-content={label}
+        className="flex justify-center items-center m-0 p-0 opacity-100 hover:opacity-80"
+        onClick={onClick}
+      >
+        <Icon className={iconClassName} />
+      </button>
+
+      <Tooltip noArrow style={tooltipStyles} id={tooltipId} />
+    </>
   );
 };
 

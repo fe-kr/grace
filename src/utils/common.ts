@@ -9,9 +9,9 @@ export const formatTimestamp = (timestamp: number) => {
   return [hours, minutes, seconds].map(item => item.toString().padStart(2, "0")).join(":");
 };
 
-export const parseVideoIdFromUrl = (url?: string) => {
+export const parseVideoIdFromUrl = (url: string = "") => {
   try {
-    return new URL(url || "").searchParams.get("v");
+    return new URL(url).searchParams.get("v");
   } catch {
     return null;
   }

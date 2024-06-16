@@ -2,11 +2,17 @@
   "manifest_version": 3,
   "name": "Grace",
   "version": "1.0.0",
-  "description": "Extension for saving timestamps in YT videos",
+  "description": "Extension for saving Youtube videos bookmarks",
   "action": {
+    "default_icon": {
+      "16": "logo-16.png",
+      "24": "logo-24.png",
+      "32": "logo-32.png"
+    },
     "default_popup": "index.html",
     "default_title": "YouTube Video Bookmarks" 
   },
+  "short_name": "YT bookmarks",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://*.youtube.com/*"],
   "background": {

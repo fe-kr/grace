@@ -9,30 +9,33 @@ const Bookmarks = () => {
   const [data, setData] = useState<Bookmark[] | null>(null);
   const idsRef = useRef<{ tabId?: number; videoId?: string }>({});
 
+  const isEmptyBookmarksList = !data?.length;
+
   const onPlayVideo = (e: MouseEvent<HTMLButtonElement>) => {
-    console.log(BookmarkEventType.PLAY, idsRef, data);
+    const { id, shouldPlay } = e.currentTarget.dataset;
+
     chrome.tabs.sendMessage(idsRef.current.tabId!, {
-      type: BookmarkEventType.PLAY,
-      payload: data?.find(({ id }) => id === e.currentTarget.dataset.id),
+      type: BookmarkEventType.SET_VIDEO_PLAYER_TIMESTAMP,
+      payload: { ...data?.find((item: Bookmark) => item.id === id), shouldPlay },
     });
   };
 
-  const onUpdateBookmarks = useCallback((changes: Record<string, chrome.storage.StorageChange>) => {
-    const videoId = idsRef.current?.videoId;
+  const onDeleteBookmark = useCallback(async (e: MouseEvent<HTMLButtonElement>) => {
+    const { videoId, tabId } = idsRef.current;
+    const { id } = e.currentTarget.dataset;
 
-    if (!videoId || !changes[videoId]) return;
+    if (!videoId) {
+      return;
+    }
 
-    const parsedData = JSON.parse(changes[videoId].newValue || null);
+    const data = await storage
+      .getParsedItem(videoId)
+      .then(data => (data ?? []).filter((item: Bookmark) => item.id !== id));
 
-    setData(parsedData);
-  }, []);
+    storage.setItem(videoId, data);
+    chrome.action.setBadgeText({ text: data.length.toString(), tabId });
 
-  const onDeleteBookmark = useCallback((e: MouseEvent<HTMLButtonElement>) => {
-    chrome.runtime.sendMessage({
-      type: BookmarkEventType.DELETE,
-      payload: e.currentTarget.dataset,
-      meta: idsRef.current,
-    });
+    setData(data);
   }, []);
 
   const onInitBookmarks = useCallback(async () => {
@@ -51,30 +54,27 @@ const Bookmarks = () => {
     onInitBookmarks().catch(Error);
   }, [onInitBookmarks]);
 
-  useEffect(() => {
-    storage.addListener(onUpdateBookmarks);
-
-    return () => {
-      storage.removeListener(onUpdateBookmarks);
-    };
-  }, [onUpdateBookmarks]);
-
-  if (!data?.length) {
-    return <div className="p-2 text-nowrap">No Bookmarks</div>;
-  }
-
   return (
-    <div className="p-2">
+    <div className="p-2 min-w-60">
       <h3 className="w-full font-bold box-border text-center text-white m-0 p-2 rounded-lg bg-red-500">
         YouTube Bookmarks
       </h3>
-      <ul className="m-0">
-        {data
-          .toSorted((a, b) => a.timestamp - b.timestamp)
-          .map(item => (
-            <Bookmark {...item} key={item.id} onPlay={onPlayVideo} onDelete={onDeleteBookmark} />
-          ))}
-      </ul>
+      {isEmptyBookmarksList && <div className="mt-2 text-center">No Data</div>}
+
+      {!isEmptyBookmarksList && (
+        <ul className="m-0 max-h-60 overflow-auto scrollbar-gutter-stable">
+          {data
+            .toSorted((a, b) => a.timestamp - b.timestamp)
+            .map(item => (
+              <Bookmark
+                {...item}
+                key={item.id}
+                onSetBookmark={onPlayVideo}
+                onDeleteBookmark={onDeleteBookmark}
+              />
+            ))}
+        </ul>
+      )}
     </div>
   );
 };
