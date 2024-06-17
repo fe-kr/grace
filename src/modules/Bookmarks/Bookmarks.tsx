@@ -55,14 +55,14 @@ const Bookmarks = () => {
   }, [onInitBookmarks]);
 
   return (
-    <div className="p-2 min-w-60">
+    <div className="p-2">
       <h3 className="w-full font-bold box-border text-center text-white m-0 p-2 rounded-lg bg-red-500">
         YouTube Bookmarks
       </h3>
-      {isEmptyBookmarksList && <div className="mt-2 text-center">No Data</div>}
+      {isEmptyBookmarksList && <div className="mt-2 w-60 text-center">No Data</div>}
 
       {!isEmptyBookmarksList && (
-        <ul className="m-0 max-h-60 overflow-auto scrollbar-gutter-stable">
+        <ul className="m-0 w-60 h-60 overflow-auto scrollbar-gutter-stable">
           {data
             .toSorted((a, b) => a.timestamp - b.timestamp)
             .map(item => (
