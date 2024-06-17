@@ -2,7 +2,8 @@
 
 ## 📖 About
 Grace is a Chrome extension designed to save video timestamps in YouTube.
-![image](https://github.com/fe-kr/grace/assets/166660204/c7061c76-84a4-4625-aa50-3b716b8e7234)
+![image](https://github.com/fe-kr/grace/assets/166660204/e69c1c5b-3cc2-4238-bc34-85cfc0e0e320)
+
 
 ## ✨ Features
 **🎨 Minimalistic Design**
